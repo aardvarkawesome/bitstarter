@@ -27,11 +27,11 @@ var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
-var HTMLURL_DEFAULT = "https://arcane-fortress-6381.herokuapp.com";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
     if(!fs.existsSync(instr)) {
+        if(instr == "") { instr = "__BLANK__"; }
         console.log("%s does not exist. Exiting.", instr);
         process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
     }
@@ -46,8 +46,14 @@ var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
+var checkDaHTML = function(checkThisHTML, checkers) {
+    var checkJson = checkHtmlFile(checkThisHTML, checkers);
+    var outJson = JSON.stringify(checkJson, null, 4);
+    console.log(outJson);
+};
+
 var checkHtmlFile = function(htmlfile, checksfile) {
-    $ = htmlfile; //cheerioHtmlFile(htmlfile);
+    $ = htmlfile;
     var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
@@ -66,20 +72,16 @@ var clone = function(fn) {
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <html_url>', 'URL', HTMLURL_DEFAULT)
+        .option('-f, --file <html_file>', 'Path to index.html', HTMLFILE_DEFAULT)
+        .option('-u, --url <html_url>', 'URL')
 	.parse(process.argv);
-
     if(program.url) {
-        rest.get(program.url).on('complete', function(result) { 
-            var checkJson = checkHtmlFile(cheerio.load(result),program.checks);
-            var outJson = JSON.stringify(checkJson, null, 4);
-            console.log(outJson);
-        });
-    } else {
-        var checkJson = checkHtmlFile(cheerioHtmlFile(program.file),program.checks);
-        var outJson = JSON.stringify(checkJson, null, 4);
-        console.log(outJson);
-    }
-
+        rest.get(program.url).on('complete', function(result) { checkDaHTML(cheerio.load(result), program.checks); } );
+    } else { checkDaHTML(cheerioHtmlFile(assertFileExists(program.file)), program.checks); }
 } else { exports.checkHtmlFile = checkHtmlFile; }
+
+
+
+
+
+
