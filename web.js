@@ -14,3 +14,7 @@ var port = process.env.PORT || 8080;
 app.listen(port, function() {
   console.log("Listening on " + port);
 });
+
+// To enable a separate folder for css stylesheets:
+
+app.use('/css', express.static(__dirname + '/css'));
